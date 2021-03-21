@@ -15,18 +15,20 @@
           let marker = this.el;
           marker.addEventListener("markerFound", (event) => {
             markersVisibility[marker.id] = true;
-            console.log(`Marker ${marker.id} found`);
+            // console.log(`Marker ${marker.id} found`);
           });
           marker.addEventListener("markerLost", (event) => {
             markersVisibility[marker.id] = false;
-            console.log(`Marker ${marker.id} lost`);
+            // console.log(`Marker ${marker.id} lost`);
           });
         },
       });
 
       AFRAME.registerComponent("app-handler", {
         init: () => {
-          this.degreeText = document.getElementById("degreeText");
+          this.distance = 0;
+          this.angle = 0;
+          this.degreeTexts = document.querySelectorAll("a-text");
           this.markerA = document.getElementById("markerA");
           this.markerB = document.getElementById("markerB");
           this.positionMarkerA = new THREE.Vector3();
@@ -47,31 +49,31 @@
 
         tick: () => {
           if (markersVisibility["markerA"] && markersVisibility["markerB"]) {
-            const oldPositionMarkerA = this.positionMarkerA;
-            const oldPositionMarkerB = this.positionMarkerB;
-
             this.markerA.object3D.getWorldPosition(this.positionMarkerA);
             this.markerB.object3D.getWorldPosition(this.positionMarkerB);
 
-            let distance = this.positionMarkerA.distanceTo(
+            this.distance = this.positionMarkerA.distanceTo(
               this.positionMarkerB
             );
 
             let angularCoefficient =
-              (this.positionMarkerA.y - this.positionMarkerB.y) /
+              (this.positionMarkerB.y - this.positionMarkerA.y) /
               (this.positionMarkerB.x - this.positionMarkerA.x);
-            let angle = parseInt(
-              (Math.atan(angularCoefficient) * 180) / Math.PI,
-              10
+            this.angle = Math.abs(
+              parseInt((Math.atan(angularCoefficient) * 180) / Math.PI, 10)
             );
-            this.degreeText.setAttribute("value", Math.abs(angle));
+            this.degreeTexts.forEach((degreeText) =>
+              degreeText.setAttribute("value", this.angle)
+            );
 
             this.cylinderGroup.lookAt(this.positionMarkerB);
-            this.cylinder.scale.set(1, 1, distance);
+            this.cylinder.scale.set(1, 1, this.distance);
             this.cylinder.visible = true;
           } else {
             this.cylinder.visible = false;
-            this.degreeText.setAttribute("value", "");
+            this.degreeTexts.forEach((degreeText) =>
+              degreeText.setAttribute("value", "")
+            );
           }
         },
       });
@@ -93,7 +95,6 @@
         marker-visibility-handler
       >
         <a-text
-          id="degreeText"
           value="??"
           color="red"
           scale="2 2 2"
@@ -105,6 +106,7 @@
         <a-entity id="cylinderGroup"></a-entity>
         <a-sphere radius="0.10" color="red"></a-sphere>
       </a-marker>
+
       <a-marker
         id="markerB"
         preset="custom"
@@ -112,6 +114,15 @@
         url="Markers/letterB.patt"
         marker-visibility-handler
       >
+        <a-text
+          value="??"
+          color="red"
+          scale="2 2 2"
+          align="center"
+          rotation="-90 0 0"
+          position="0 0 -0.35"
+          wrap-count="30"
+        ></a-text>
         <a-sphere radius="0.10" color="red"></a-sphere>
       </a-marker>
       <a-entity camera></a-entity>
